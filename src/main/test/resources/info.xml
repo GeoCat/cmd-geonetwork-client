@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<info>
+  <site>
+    <name>Metadatakatalogen</name>
+    <organisation>SKB</organisation>
+    <siteId>bd14098b-44e6-47e5-959d-f40dda65da5a</siteId>
+    <platform>
+      <name>geonetwork</name>
+      <version>3.4.3</version>
+      <subVersion>SNAPSHOT</subVersion>
+    </platform>
+  </site>
+  <env>
+    <baseURL>/geonetwork</baseURL>
+    <node>srv</node>
+  </env>
+</info>

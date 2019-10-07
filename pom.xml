@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.geocat</groupId>
+  <artifactId>cmd-geonetwork-client</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${httpclient.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+      <version>${httpmime.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>fluent-hc</artifactId>
+      <version>${fluenthc.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>${apache.commons-lang.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>1.3.1</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.jdom</groupId>
+      <artifactId>jdom2</artifactId>
+      <version>${jdom2.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>jaxen</groupId>
+      <artifactId>jaxen</artifactId>
+      <version>1.1.6</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.8.5</version>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>1.3.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.sf.saxon</groupId>
+      <artifactId>saxon-dom</artifactId>
+      <version>9.1.0.8b</version>
+    </dependency>
+
+    <dependency>
+      <groupId>it.sauronsoftware</groupId>
+      <artifactId>junique</artifactId>
+      <version>1.0.4</version>
+      <type>jar</type>
+    </dependency>
+
+    <!-- Apache commons csv -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>1.6</version>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <!-- For saxon -->
+    <repository>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <id>core-maven-repo</id>
+      <name>GeoNetwork remote repository</name>
+      <url>https://raw.githubusercontent.com/geonetwork/core-maven-repo/master</url>
+    </repository>
+
+    <repository>
+      <id>poolborges-github-thirdparty</id>
+      <name>poolborges-github</name>
+      <url>https://github.com/poolborges/maven/raw/master/thirdparty/</url>
+    </repository>
+  </repositories>
+
+  <build>
+    <finalName>cmd-geonetwork-client</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.geocat.gnclient.Cli</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <!-- this is used for inheritance merges -->
+            <phase>package</phase>
+            <!-- bind to the packaging phase -->
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+  <properties>
+    <jdk.version>1.8</jdk.version>
+
+    <httpclient.version>4.4</httpclient.version>
+    <httpmime.version>4.4</httpmime.version>
+    <fluenthc.version>4.4</fluenthc.version>
+    <commonscodec.version>1.10</commonscodec.version>
+    <commonsio.version>2.4</commonsio.version>
+    <jdom2.version>2.0.6</jdom2.version>
+
+    <log4j.version>2.11.1</log4j.version>
+    <junit.version>4.11</junit.version>
+
+    <apache.commons-lang.version>2.6</apache.commons-lang.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+</project>
