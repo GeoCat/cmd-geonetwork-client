@@ -31,8 +31,8 @@ public class GNMetadataServices3X extends GNMetadataServices {
     private static final Logger logger = LogManager.getLogger(GNMetadataServices3X.class);
 
 
-    public GNMetadataServices3X(String baseUrl) {
-        super(baseUrl);
+    public GNMetadataServices3X(String baseUrl, String cswEndpoint) {
+        super(baseUrl, cswEndpoint);
         metadataServiceUrl = HelperUtility.addPathToUrl(baseUrl, "srv/api/records");
     }
 
@@ -153,6 +153,11 @@ public class GNMetadataServices3X extends GNMetadataServices {
             //  else, gn throws exception while inserting: content not allowed in prolog
             metadata = metadata.substring(metadata.indexOf("?>") + 2);
         }
+
+        if (StringUtils.isEmpty(styleSheet)) {
+            styleSheet = "_none_";
+        }
+
         String reqXml = "<request>" +
             "<owner>"+ownerId+"</owner>" +
             "<group>"+groupOwnerId+"</group>" +

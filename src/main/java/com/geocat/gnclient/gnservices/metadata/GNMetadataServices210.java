@@ -29,8 +29,8 @@ public class GNMetadataServices210 extends GNMetadataServices {
     private static final Logger logger = LogManager.getLogger(GNMetadataServices210.class);
 
 
-    public GNMetadataServices210(String baseUrl) {
-        super(baseUrl);
+    public GNMetadataServices210(String baseUrl, String cswEndpoint) {
+        super(baseUrl, cswEndpoint);
         metadataServiceUrl = HelperUtility.addPathToUrl(baseUrl, "srv/eng/");
     }
 
@@ -42,7 +42,7 @@ public class GNMetadataServices210 extends GNMetadataServices {
         SAXBuilder saxBuilder = new SAXBuilder();
         XPathFactory xpfac = XPathFactory.instance();
 
-        String cswUrl = baseUrl + "srv/eng/csw";
+        String cswUrl = baseUrl + "srv/eng" + cswEndpoint;
 
         StringBuilder cswUrlBuilder = new StringBuilder(cswUrl);
 

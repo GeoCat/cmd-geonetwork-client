@@ -30,9 +30,11 @@ public class GNInfoServices {
     private static final Logger logger = LogManager.getLogger(GNInfoServices.class);
 
     protected String infoServiceUrl;
+    protected String infoServiceUrlGn4;
 
     public GNInfoServices(String baseUrl) {
         this.infoServiceUrl = HelperUtility.addPathToUrl(baseUrl, "srv/eng/xml.info?type=site");
+        this.infoServiceUrlGn4 = HelperUtility.addPathToUrl(baseUrl, "srv/api/site");
     }
 
     public String getVersion(GNConnection connection) throws Exception {
@@ -42,6 +44,8 @@ public class GNInfoServices {
             String response = doGet(connection, infoServiceUrl,
                 "application/xml");
 
+            // Check if the service is not available --> Try GN 4 API
+            if (!response.contains("ng-app=\"gn_login\"")) {
             logger.info("GNInfoServices.getVersion response: " + response);
             SAXBuilder saxBuilder = new SAXBuilder();
             StringReader xmlReader = new StringReader(response);
@@ -56,9 +60,11 @@ public class GNInfoServices {
             if (versionEl != null) {
                 version = versionEl.getValue();
             }
+            } else {
+                version = getVersionSiteApi(connection);
+            }
 
-            logger.error("GNInfoServices.getVersion version:", version);
-
+            logger.info("GNInfoServices.getVersion version:", version);
         } catch (IOException ex) {
             logger.error("GNInfoServices.getVersion error:", ex);
 
@@ -67,6 +73,16 @@ public class GNInfoServices {
         }
 
         return version;
+    }
+
+    private String getVersionSiteApi(GNConnection connection) throws Exception {
+
+        String response = doGet(connection, infoServiceUrlGn4,
+            "application/json");
+
+        JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
+
+        return jsonObject.get("system/platform/version").getAsString();
     }
 
 	public String getVersionJson(GNConnection connection) throws Exception {
@@ -130,7 +146,7 @@ public class GNInfoServices {
                 responseBody = EntityUtils.toString(entity, "UTF-8");
 
                 EntityUtils.consume(entity);
-            } else if (response != null) {
+            } else if (response == null) {
                 throw new IOException("Http response error (no response): Check the server is available");
             } else {
                 throw new IOException("Http response error (" + response.getStatusLine().getStatusCode() +

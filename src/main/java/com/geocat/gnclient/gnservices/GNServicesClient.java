@@ -5,6 +5,8 @@ import com.geocat.gnclient.gnservices.info.GNInfoServices;
 import com.geocat.gnclient.gnservices.login.GNLogin;
 import com.geocat.gnclient.gnservices.metadata.*;
 import com.geocat.gnclient.gnservices.metadata.model.*;
+import com.geocat.gnclient.gnservices.metadata.model.v4.MetadataInfoV4;
+import com.geocat.gnclient.gnservices.metadata.model.v4.MetadataStatusV4;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.geocat.gnclient.gnservices.groups.GNGroupServices;
@@ -26,6 +28,7 @@ public class GNServicesClient {
     private GNConnection connection;
     private IMetadataProcessor metadataProcessor;
     private String baseUrl;
+    private String cswEndpoint;
     private String version;
     private boolean doCustomAuthentication;
     private String customAuthenticationUrl;
@@ -42,6 +45,9 @@ public class GNServicesClient {
         return version;
     }
 
+    public String getCswEndpoint() {
+        return cswEndpoint;
+    }
 
     public GNServicesClient(Builder builder) throws Exception {
 
@@ -49,12 +55,13 @@ public class GNServicesClient {
 
         this.baseUrl = builder.getBaseUrl();
 
+        this.cswEndpoint = builder.getCswEndpoint();
         if (!builder.isDoCustomAuthentication()) {
             this.version = retrieveGeoNetworkVersion(baseUrl);
 
             this.groupServices = GNGroupServicesFactory.getGroupServices(this.version, this.baseUrl);
             this.userServices = GNUserServicesFactory.getUserServices(this.version, this.baseUrl);
-            this.metadataServices = GNMetadataServicesFactory.getMetadataServices(this.version, this.baseUrl);
+            this.metadataServices = GNMetadataServicesFactory.getMetadataServices(this.version, this.baseUrl, this.cswEndpoint);
         } else {
             this.doCustomAuthentication = true;
             this.customAuthenticationUrl = builder.getCustomAuthenticationUrl();
@@ -84,7 +91,7 @@ public class GNServicesClient {
 
             this.groupServices = GNGroupServicesFactory.getGroupServices(this.version, this.baseUrl);
             this.userServices = GNUserServicesFactory.getUserServices(this.version, this.baseUrl);
-            this.metadataServices = GNMetadataServicesFactory.getMetadataServices(this.version, this.baseUrl);
+            this.metadataServices = GNMetadataServicesFactory.getMetadataServices(this.version, this.baseUrl, this.cswEndpoint);
         }
     }
 
@@ -107,6 +114,21 @@ public class GNServicesClient {
         //System.out.println(mdStatus);
 
         MetadataInfo mdInfo = new MetadataInfo();
+        mdInfo.setPrivileges(mdPrivileges);
+        mdInfo.setStatus(mdStatus);
+        mdInfo.setUuid(uuid);
+
+        return mdInfo;
+    }
+
+    public MetadataInfoV4 retrieveMetadataInfoV4(String uuid, Map<String, Group> groups) throws Exception {
+        MetadataSharing mdPrivileges = metadataServices.getMetadataSharing(uuid, groups, connection);
+        //System.out.println(mdPrivileges);
+
+        List<MetadataStatusV4> mdStatus = metadataServices.getMetadataStatusV4(uuid, connection);
+        //System.out.println(mdStatus);
+
+        MetadataInfoV4 mdInfo = new MetadataInfoV4();
         mdInfo.setPrivileges(mdPrivileges);
         mdInfo.setStatus(mdStatus);
         mdInfo.setUuid(uuid);
@@ -168,6 +190,10 @@ public class GNServicesClient {
 
     public boolean updateMetadataStatus(String uuid, long metadataId, MetadataStatus status) throws Exception {
         return metadataServices.updateMetadataStatus(uuid, metadataId, status, connection);
+    }
+
+    public void deleteAllMetadataStatus(String uuid, long metadataId) throws Exception {
+        metadataServices.deleteAllMetadataStatus(uuid, metadataId, connection);
     }
 
     public boolean deleteMetadata(String uuid) throws Exception {
@@ -247,6 +273,7 @@ public class GNServicesClient {
         private String baseUrl = "";
         private boolean doCustomAuthentication = false;
         private String customAuthenticationUrl = "";
+        private String cswEndpoint = "";
 
         public Path getOutputPath() {
             return outputPath;
@@ -264,6 +291,9 @@ public class GNServicesClient {
             return customAuthenticationUrl;
         }
 
+        public String getCswEndpoint() {
+            return cswEndpoint;
+        }
 
         public Builder(String baseUrl, Path outputPath) {
             if(!baseUrl.endsWith("/")) {
@@ -281,6 +311,11 @@ public class GNServicesClient {
 
         public Builder customAuthenticationUrl(String customAuthenticationUrl) {
             this.customAuthenticationUrl = customAuthenticationUrl;
+            return this;
+        }
+
+        public Builder cswEndpoint(String cswEndpoint) {
+            this.cswEndpoint = cswEndpoint;
             return this;
         }
 

@@ -5,7 +5,9 @@ import com.geocat.gnclient.constants.Geonetwork;
 public class GNLoginFactory {
 
     public static GNLogin getLogin(String gnVersion, String baseUrl) throws Exception {
-        if (gnVersion.startsWith(Geonetwork.VERSION_3_X)) {
+        if (gnVersion.startsWith(Geonetwork.VERSION_3_X) ||
+            gnVersion.startsWith(Geonetwork.VERSION_4_0_X) ||
+            gnVersion.startsWith(Geonetwork.VERSION_4_2_X)) {
            return new GNLogin34(baseUrl);
 
         } else if (gnVersion.startsWith(Geonetwork.VERSION_2_10_X)) {

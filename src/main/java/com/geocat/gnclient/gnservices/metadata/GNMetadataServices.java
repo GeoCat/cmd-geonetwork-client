@@ -6,6 +6,7 @@ import com.geocat.gnclient.gnservices.GNConnection;
 import com.geocat.gnclient.gnservices.groups.model.Group;
 import com.geocat.gnclient.gnservices.metadata.model.MetadataPrivilege;
 import com.geocat.gnclient.gnservices.metadata.model.MetadataSearchResults;
+import com.geocat.gnclient.gnservices.metadata.model.v4.MetadataStatusV4;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +24,7 @@ import com.geocat.gnclient.util.HelperUtility;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,9 +33,16 @@ public abstract class GNMetadataServices extends GNBaseServices {
     private static final Logger logger = LogManager.getLogger(GNMetadataServices.class);
 
     protected String metadataServiceUrl;
+    protected String cswEndpoint;
 
-    public GNMetadataServices(String baseUrl) {
+    public GNMetadataServices(String baseUrl, String cswEndpoint) {
        super(baseUrl);
+
+       if (StringUtils.isEmpty(cswEndpoint)) {
+           this.cswEndpoint = "/csw";
+       } else {
+           this.cswEndpoint = cswEndpoint;
+       }
     }
 
     public MetadataSearchResults retrieveMetadata(String filter, int from, GNConnection connection) throws Exception {
@@ -42,7 +51,7 @@ public abstract class GNMetadataServices extends GNBaseServices {
         SAXBuilder saxBuilder = new SAXBuilder();
         XPathFactory xpfac = XPathFactory.instance();
 
-        String cswUrl = baseUrl + "srv/eng/csw";
+        String cswUrl = baseUrl + "srv/eng" + cswEndpoint;
 
         StringBuilder cswUrlBuilder = new StringBuilder(cswUrl);
 
@@ -135,7 +144,7 @@ public abstract class GNMetadataServices extends GNBaseServices {
         SAXBuilder saxBuilder = new SAXBuilder();
         XPathFactory xpfac = XPathFactory.instance();
 
-        String cswUrl = baseUrl + "srv/eng/csw";
+        String cswUrl = baseUrl + "srv/eng" + cswEndpoint;
 
         StringBuilder cswUrlBuilder = new StringBuilder(cswUrl);
 
@@ -259,7 +268,13 @@ public abstract class GNMetadataServices extends GNBaseServices {
 
     public abstract MetadataSharing getMetadataSharing(String metadataUuid, Map<String, Group> groups, GNConnection connection) throws Exception;
 
-    public abstract MetadataStatus getMetadataStatus(String metadataUuid, GNConnection connection) throws Exception;
+    public MetadataStatus getMetadataStatus(String metadataUuid, GNConnection connection) throws Exception {
+        return null;
+    };
+
+    public List<MetadataStatusV4> getMetadataStatusV4(String metadataUuid, GNConnection connection) throws Exception {
+        return new ArrayList<>();
+    }
 
     public abstract long countMetadataForGroup(int groupName, GNConnection connection) throws Exception;
 
@@ -270,6 +285,10 @@ public abstract class GNMetadataServices extends GNBaseServices {
     public abstract boolean updateMetadataPrivilege(long metadataUuid, List<MetadataPrivilege> privileges, GNConnection connection) throws Exception;
 
     public abstract boolean updateMetadataStatus(String uuid, long metadataId, MetadataStatus status, GNConnection connection) throws Exception;
+
+    public void deleteAllMetadataStatus(String uuid, long metadataId, GNConnection connection) throws Exception {
+
+    }
 
     public abstract boolean deleteMetadata(String metadataUuid, GNConnection connection) throws Exception;
 

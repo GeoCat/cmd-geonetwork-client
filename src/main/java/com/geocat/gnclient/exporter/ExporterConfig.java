@@ -16,6 +16,8 @@ public class ExporterConfig {
     private int defaultRequestDelay = 0;
     private String defaultExportType;
     private LocalDateTime defaultMetadataModifiedDateSinceFilter;
+    private String defaultExportGroupNames;
+    private String exportLocalXslt;
 
     public Path getOutputPath() {
         return outputPath;
@@ -27,10 +29,6 @@ public class ExporterConfig {
 
     public String getDefaultCswConstraint() {
         return defaultCswConstraint;
-    }
-
-    public boolean getDefaultExportFilterByGroupLocally() {
-        return defaultExportFilterByGroupLocally;
     }
 
     public int getDefaultRequestDelay() {
@@ -45,6 +43,18 @@ public class ExporterConfig {
         return defaultMetadataModifiedDateSinceFilter;
     }
 
+    public String getDefaultExportGroupNames() {
+        return defaultExportGroupNames;
+    }
+
+    public String getExportLocalXslt() {
+        return exportLocalXslt;
+    }
+
+    public boolean isDefaultExportFilterByGroupLocally() {
+        return defaultExportFilterByGroupLocally;
+    }
+
     private ExporterConfig(Builder builder) {
         outputPath = builder.outputPath;
         defaultExportMetadataTypes = builder.defaultExportMetadataTypes;
@@ -53,6 +63,8 @@ public class ExporterConfig {
         defaultRequestDelay = builder.defaultRequestDelay;
         defaultExportType = builder.defaultExportType;
         defaultMetadataModifiedDateSinceFilter = builder.defaultMetadataModifiedDateSinceFilter;
+        defaultExportGroupNames = builder.defaultExportGroupNames;
+        exportLocalXslt = builder.exportLocalXslt;
     }
 
     public static class Builder {
@@ -63,6 +75,8 @@ public class ExporterConfig {
         private int defaultRequestDelay = 0;
         private String defaultExportType = "all";
         private LocalDateTime defaultMetadataModifiedDateSinceFilter;
+        private String defaultExportGroupNames;
+        private String exportLocalXslt = "";
 
         public Builder(Path outputPath) {
             this.outputPath = outputPath;
@@ -98,6 +112,15 @@ public class ExporterConfig {
             return this;
         }
 
+        public Builder defaultExportGroupNames(String defaultExportGroupNames) {
+            this.defaultExportGroupNames = defaultExportGroupNames;
+            return this;
+        }
+
+        public Builder exportLocalXslt(String exportLocalXslt) {
+            this.exportLocalXslt = exportLocalXslt;
+            return this;
+        }
 
         public ExporterConfig build() {
             return new ExporterConfig(this);

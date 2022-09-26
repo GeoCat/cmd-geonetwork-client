@@ -12,12 +12,13 @@ public class ImporterReport {
     private boolean errorsImportingGroups;
     private boolean errorsImportingUsers;
     private boolean errorsImportingMetadata;
+    private boolean errorsRemoveMetadataDefaultGroup;
     private boolean existsMetadataToImport;
     private String errorsRemoveDataText;
     private String errorsImportingGroupsText;
     private String errorsImportingUsersText;
     private String errorsImportingMetadataText;
-
+    private String errorsRemoveMetadataDefaultGroupText;
 
     public boolean isRemoveData() {
         return removeData;
@@ -116,6 +117,22 @@ public class ImporterReport {
         this.errorsImportingMetadataText = errorsImportingMetadataText;
     }
 
+    public boolean isErrorsRemoveMetadataDefaultGroup() {
+        return errorsRemoveMetadataDefaultGroup;
+    }
+
+    public void setErrorsRemoveMetadataDefaultGroup(boolean errorsRemoveMetadataDefaultGroup) {
+        this.errorsRemoveMetadataDefaultGroup = errorsRemoveMetadataDefaultGroup;
+    }
+
+    public String getErrorsRemoveMetadataDefaultGroupText() {
+        return errorsRemoveMetadataDefaultGroupText;
+    }
+
+    public void setErrorsRemoveMetadataDefaultGroupText(String errorsRemoveMetadataDefaultGroupText) {
+        this.errorsRemoveMetadataDefaultGroupText = errorsRemoveMetadataDefaultGroupText;
+    }
+
     @Override
     public String toString() {
         return "Import report:\n" +
@@ -128,6 +145,7 @@ public class ImporterReport {
             "  - Exists users file: " + (existsUsersFile?"yes":"no") + "\n" +
             (existsUsersFile?"  - Errors importing users: " + (errorsImportingUsers?"yes":"no") + "\n":"") +
             (errorsImportingUsers?errorsImportingUsersText + "\n":"") +
+            (errorsRemoveMetadataDefaultGroup?errorsRemoveMetadataDefaultGroupText + "\n":"") +
             "  - Exist metadata to import: " + (existsMetadataToImport ?"yes":"no") + "\n" +
             "  - Errors importing metadata: " + (errorsImportingMetadata?"yes":"no");
     }

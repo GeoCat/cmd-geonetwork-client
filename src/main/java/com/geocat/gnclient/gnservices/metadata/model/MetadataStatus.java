@@ -5,6 +5,7 @@ public class MetadataStatus {
     private String changeDate;
     private String changeMessage;
     private String name;
+    private String uuid;
 
     public MetadataStatus() {
         // no-args constructor
@@ -40,5 +41,13 @@ public class MetadataStatus {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

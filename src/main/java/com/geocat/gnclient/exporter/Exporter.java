@@ -1,5 +1,7 @@
 package com.geocat.gnclient.exporter;
 
+import com.geocat.gnclient.constants.Geonetwork;
+import com.geocat.gnclient.gnservices.metadata.model.v4.MetadataInfoV4;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.io.FileUtils;
@@ -37,6 +39,8 @@ public class Exporter {
     private static final Logger logger = LogManager.getLogger(Exporter.class.getName());
 
     private ExporterReport exporterReport;
+
+    private final static int MAX_RETRY = 5;
 
     public ExporterReport getExporterReport() {
         return exporterReport;
@@ -106,6 +110,18 @@ public class Exporter {
                 groups = client.retrieveGroups();
                 logger.info("  Retrieved " + groups.size()  + " group(s).");
 
+                if (StringUtils.isNotEmpty(config.getDefaultExportGroupNames())) {
+                    Map<String, Group> filterGroups = new HashMap<>();
+                    List<String> groupNames = Arrays.asList(config.getDefaultExportGroupNames().split(","));
+                    for(String name : groupNames){
+                        if (groups.containsKey(name)) {
+                            filterGroups.put(name, groups.get(name));
+                        }
+                    }
+
+                    groups = filterGroups;
+                }
+
                 exportGroups(client, outputPath, groups);
 
                 exporterReport.setErrorsExportingGroups(false);
@@ -132,7 +148,7 @@ public class Exporter {
         if (config.getDefaultExportType().equals("all")) {
             exporterReport.setExportMetadata(true);
 
-            if (!config.getDefaultExportFilterByGroupLocally()) {
+            if (!config.isDefaultExportFilterByGroupLocally()) {
                 // Retreive metadata per group
                 execFilterByGroupCsw(client, config, groups);
             } else {
@@ -150,7 +166,7 @@ public class Exporter {
         Path metadataPath = outputPath.resolve("metadata");
         Files.createDirectories(metadataPath);
 
-        String filter = buildCswFilter(config);
+        String filter = buildCswFilter(client, config);
 
         // Process groups metadata
         groups.forEach((groupName, group) -> {
@@ -184,7 +200,7 @@ public class Exporter {
 
                     int retry = 1;
 
-                    while (retry <= 3) {
+                    while (retry <= MAX_RETRY) {
                         metadataSearchResults = retrieveMetadataForGroupPaginated(client, groupId, filter, nextRecord);
 
                         if (metadataSearchResults == null) {
@@ -194,7 +210,7 @@ public class Exporter {
                         }
                     }
 
-                    if ((metadataSearchResults ==  null) && (retry == 3)) {
+                    if (metadataSearchResults == null) {
                         logger.error("Max retry for retrieveMetadataForGroupPaginated");
                         break;
                     }
@@ -225,7 +241,7 @@ public class Exporter {
         Path metadataPath = outputPath.resolve("metadata");
         Files.createDirectories(metadataPath);
 
-        String filter = buildCswFilter(config);
+        String filter = buildCswFilter(client, config);
 
         // Create group folders
         groups.forEach((groupName, group) -> {
@@ -241,7 +257,37 @@ public class Exporter {
         });
 
 
-        MetadataSearchResults metadataSearchResults = client.retrieveMetadataPaginated(filter, 1);
+
+        MetadataSearchResults metadataSearchResults = null;
+
+        int retry = 1;
+
+        while (retry <= MAX_RETRY) {
+            try {
+                metadataSearchResults = client.retrieveMetadataPaginated(filter, 1);
+
+            } catch (Exception ex) {
+                logger.error(ex.getMessage(), ex);
+                metadataSearchResults = null;
+            }
+
+            if (metadataSearchResults == null) {
+                retry++;
+
+                if (config.getDefaultRequestDelay() > 0) {
+                    Thread.sleep(config.getDefaultRequestDelay());
+                }
+            } else {
+                break;
+            }
+        }
+
+
+        if (metadataSearchResults ==  null) {
+            logger.error("Max retry for retrieveMetadataForGroupPaginated");
+            return;
+        }
+
         int totalReturned = metadataSearchResults.getTotalReturned();
         int totalMatched = metadataSearchResults.getTotalMatched();
         int nextRecord = metadataSearchResults.getNextRecord();
@@ -262,19 +308,29 @@ public class Exporter {
 
         while ((nextRecord > 0) && (nextRecord < totalMatched)) {
 
-            int retry = 1;
+            retry = 1;
 
-            while (retry <= 3) {
+            while (retry <= MAX_RETRY) {
+                try {
                 metadataSearchResults = client.retrieveMetadataPaginated(filter, nextRecord);
+
+                } catch (Exception ex) {
+                    logger.error(ex.getMessage(), ex);
+                    metadataSearchResults = null;
+                }
 
                 if (metadataSearchResults == null) {
                     retry++;
+
+                    if (config.getDefaultRequestDelay() > 0) {
+                        Thread.sleep(config.getDefaultRequestDelay());
+                    }
                 } else {
                     break;
                 }
             }
 
-            if ((metadataSearchResults ==  null) && (retry == 3)) {
+            if (metadataSearchResults ==  null) {
                 logger.error("Max retry for retrieveMetadataForGroupPaginated");
                 break;
             }
@@ -348,7 +404,6 @@ public class Exporter {
         StringBuilder exportMetadataErrors = new StringBuilder();
 
         metadata.forEach((uuid, md) -> {
-
             try {
                 //Thread.currentThread().sleep(500);
                 progress.updateProgress();
@@ -357,13 +412,63 @@ public class Exporter {
                 //System.out.print(StringUtils.repeat("\b", counterSize[0]) + counterValue);
                 //counterSize[0] = counterValue.length();
 
-                logger.debug("Retrieving metadata info for metadata: " + uuid);
+                logger.info("Retrieving metadata info for metadata: " + uuid);
 
                 // Add request delay to avoid exhausting the server
                 if (config.getDefaultRequestDelay() > 0) {
                     Thread.sleep(config.getDefaultRequestDelay());
                 }
 
+                if (client.getVersion().startsWith(Geonetwork.VERSION_4_0_X)) {
+                    MetadataInfoV4 mdInfo = client.retrieveMetadataInfoV4(uuid, groups);
+
+                    String groupOwner =  mdInfo.getPrivileges().getGroupOwner();
+
+                    // Check metadata owner group is the same as the group that is being processed
+                    // This is for LST where CSW GetRecords can't be filtered by group owner
+                    if (Integer.parseInt(groupOwner) == exportGroup.getId()) {
+                        logger.info("  Exporting metadata: " + uuid);
+
+                        String groupName = "";
+
+                        // TODO: To improve this
+                        for (Group g : groups.values()) {
+                            if (g.getId() == Integer.parseInt(groupOwner)) {
+                                groupName = g.getName();
+                                break;
+                            }
+                        }
+
+                        //String groupName = groups.get(groupOwner).getName();
+                        if (StringUtils.isNotEmpty(groupName)) {
+                            mdInfo.setGroupName(groupName);
+                        }
+
+                        String fileName = mdInfo.getPrivileges().getGroupOwner() + "_" +
+                            mdInfo.getPrivileges().getOwner() + "_" +  HelperUtility.removeFileSystemSpecialChars(uuid);
+
+
+                        // Metadata info
+                        logger.debug("  Creating metadata info file for metadata: " + uuid);
+                        // <group>_<ownwer>_<File-identfier>_info.xml
+                        String fileNameMetadataInfo = fileName + "_info.xml";
+                        Files.write(outputPath.resolve(fileNameMetadataInfo), mdInfo.getAsXml().getBytes(Charset.forName("UTF8")), StandardOpenOption.CREATE);
+
+                        // Metadata xml
+                        logger.info("  Creating metadata xml file for metadata: " + uuid);
+                        // <group>_<ownwer>_<File-identfier>.xml
+                        String fileNameMetadata = fileName + ".xml";
+
+                        if (StringUtils.isNotEmpty(config.getExportLocalXslt())) {
+                            logger.info("  Applying metadata xslt '" + config.getExportLocalXslt() + "' for metadata: " + uuid);
+                            md = HelperUtility.applyXslt(md, config.getExportLocalXslt());
+                        }
+
+                        Files.write(outputPath.resolve(fileNameMetadata), md.getBytes(Charset.forName("UTF8")), StandardOpenOption.CREATE);
+                    } else {
+                        logger.info("  Skipping metadata: " + uuid + ", not owned by group " + exportGroup.getName() + "(" + exportGroup.getId() + ")");
+                    }
+                } else {
                 MetadataInfo mdInfo = client.retrieveMetadataInfo(uuid, groups);
 
                 String groupOwner =  mdInfo.getPrivileges().getGroupOwner();
@@ -400,14 +505,22 @@ public class Exporter {
 
 
                     // Metadata xml
-                    logger.debug("  Creating metadata xml file for metadata: " + uuid);
+                        logger.info("  Creating metadata xml file for metadata: " + uuid);
                     // <group>_<ownwer>_<File-identfier>.xml
                     String fileNameMetadata = fileName + ".xml";
+
+                        if (StringUtils.isNotEmpty(config.getExportLocalXslt())) {
+                            logger.info("  Applying metadata xslt '" + config.getExportLocalXslt() + "' for metadata: " + uuid);
+                            md = HelperUtility.applyXslt(md, config.getExportLocalXslt());
+                        }
 
                     Files.write(outputPath.resolve(fileNameMetadata), md.getBytes(Charset.forName("UTF8")), StandardOpenOption.CREATE);
                 } else {
                     logger.info("  Skipping metadata: " + uuid + ", not owned by group " + exportGroup.getName() + "(" + exportGroup.getId() + ")");
                 }
+                }
+
+
 
 
             } catch (Exception ex) {
@@ -445,7 +558,7 @@ public class Exporter {
                 //System.out.print(StringUtils.repeat("\b", counterSize[0]) + counterValue);
                 //counterSize[0] = counterValue.length();
 
-                logger.debug("Retrieving metadata info for metadata: " + uuid);
+                logger.info("Retrieving metadata info for metadata: " + uuid);
 
                 // Add request delay to avoid exhausting the server
                 if (config.getDefaultRequestDelay() > 0) {
@@ -480,20 +593,23 @@ public class Exporter {
 
 
                 // Metadata info
-                logger.debug("  Creating metadata info file for metadata: " + uuid);
+                logger.info("  Creating metadata info file for metadata: " + uuid);
                 // <group>_<ownwer>_<File-identfier>_info.xml
                 String fileNameMetadataInfo = fileName + "_info.xml";
                 Files.write(outputPathGroup.resolve(fileNameMetadataInfo), mdInfo.getAsXml().getBytes(Charset.forName("UTF8")), StandardOpenOption.CREATE);
 
 
                 // Metadata xml
-                logger.debug("  Creating metadata xml file for metadata: " + uuid);
+                logger.info("  Creating metadata xml file for metadata: " + uuid);
                 // <group>_<ownwer>_<File-identfier>.xml
                 String fileNameMetadata = fileName + ".xml";
 
+                if (StringUtils.isNotEmpty(config.getExportLocalXslt())) {
+                    logger.info("  Applying metadata xslt '" + config.getExportLocalXslt() + "' for metadata: " + uuid);
+                    md = HelperUtility.applyXslt(md, config.getExportLocalXslt());
+                }
+
                 Files.write(outputPathGroup.resolve(fileNameMetadata), md.getBytes(Charset.forName("UTF8")), StandardOpenOption.CREATE);
-
-
             } catch (Exception ex) {
                 logger.error("Error exporting metadata " + uuid + ", error:" + ex.getMessage(), ex);
                 exportMetadataErrors.append("Error exporting metadata " + uuid + ", error:" + ex.getMessage());
@@ -575,13 +691,23 @@ public class Exporter {
      * @param config
      * @return
      */
-    private String buildCswFilter(ExporterConfig config) {
+    private String buildCswFilter(GNServicesClient client, ExporterConfig config) {
         String filter = config.getDefaultCswConstraint();
 
+        if (client.getVersion().startsWith(Geonetwork.VERSION_4_0_X)) {
+            if (StringUtils.isEmpty(filter)) {
+                filter = "isHarvested%3D'false'";
+            } else {
+                filter = filter + "%20AND%20_isHarvested%3D'false'";
+            }
+
+        } else {
         if (StringUtils.isEmpty(filter)) {
             filter = "_isHarvested%3D'n'";
         } else {
             filter = filter + "%20AND%20_isHarvested%3D'n'";
+        }
+
         }
 
         List<String> metadataTypes;
