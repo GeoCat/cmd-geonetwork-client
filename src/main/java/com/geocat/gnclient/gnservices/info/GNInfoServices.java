@@ -45,21 +45,21 @@ public class GNInfoServices {
                 "application/xml");
 
             // Check if the service is not available --> Try GN 4 API
-            if (!response.contains("ng-app=\"gn_login\"")) {
-            logger.info("GNInfoServices.getVersion response: " + response);
-            SAXBuilder saxBuilder = new SAXBuilder();
-            StringReader xmlReader = new StringReader(response);
-            org.jdom2.Document responseDoc = saxBuilder.build(xmlReader);
+            if (!response.isEmpty() && !response.contains("ng-app=\"gn_login\"")) {
+                logger.info("GNInfoServices.getVersion response: " + response);
+                SAXBuilder saxBuilder = new SAXBuilder();
+                StringReader xmlReader = new StringReader(response);
+                org.jdom2.Document responseDoc = saxBuilder.build(xmlReader);
 
-            XPathFactory xpfac = XPathFactory.instance();
+                XPathFactory xpfac = XPathFactory.instance();
 
-            XPathExpression<Element> xp = xpfac.compile("/info/site/platform/version",
-                Filters.element(), null);
+                XPathExpression<Element> xp = xpfac.compile("/info/site/platform/version",
+                    Filters.element(), null);
 
-            Element versionEl = xp.evaluateFirst(responseDoc);
-            if (versionEl != null) {
-                version = versionEl.getValue();
-            }
+                Element versionEl = xp.evaluateFirst(responseDoc);
+                if (versionEl != null) {
+                    version = versionEl.getValue();
+                }
             } else {
                 version = getVersionSiteApi(connection);
             }
@@ -147,7 +147,7 @@ public class GNInfoServices {
 
                 EntityUtils.consume(entity);
             } else if (response == null) {
-                throw new IOException("Http response error (no response): Check the server is available");
+                return responseBody;
             } else {
                 throw new IOException("Http response error (" + response.getStatusLine().getStatusCode() +
                     "): " + response.getStatusLine().getReasonPhrase());
