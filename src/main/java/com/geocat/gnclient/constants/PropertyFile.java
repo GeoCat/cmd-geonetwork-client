@@ -9,12 +9,13 @@ public class PropertyFile {
     public static final String GN_BASE_URL_KEY = "gn_base_url";
     public static final String GN_IMPORT_LOCAL_XSLT = "gn_import_local_xslt";
     public static final String GN_IMPORT_REMOTE_XSLT = "gn_import_remote_xslt";
+    public static final String GN_EXPORT_LOCAL_XSLT = "gn_export_local_xslt";
     public static final String GN_EXPORT_METADATA_TYPES = "gn_export_metadata_types";
     public static final String GN_EXPORT_METADATA_MODIFIED_SINCE = "gn_export_metadata_modified_since";
     public static final String GN_EXPORT_CSW_CONSTRAINT = "gn_export_csw_constraint";
     public static final String GN_EXPORT_FILTER_BY_GROUP_LOCALLY = "gn_export_filter_by_group_locally";
     public static final String GN_EXPORT_REQUEST_DELAY = "gn_request_delay";
-
+    public static final String GN_EXPORT_GROUP_NAMES = "gn_export_group_names";
 
     public static final String OUTPUT_PATH = "output_path";
 
@@ -27,7 +28,8 @@ public class PropertyFile {
     public static final String GN_DEFAULT_IMPORT_GROUP_KEY = "gn_default_import_group";
     public static final String GN_DEFAULT_IMPORT_STATUS_KEY = "gn_default_import_status";
     public static final String GN_DEFAULT_IMPORT_PRIVILEGES_KEY = "gn_default_import_privileges";
-
+    public static final String GN_DELETE_DEFAULT_IMPORT_GROUP_BEFORE_IMPORT= "gn_delete_default_import_group_before_import";
+    public static final String GN_DEFAULT_CSW_ENDPOINT_KEY = "gn_csw_endpoint";
 
     public static final String XPATH_FACTORY_CLASS = "xpath_factory_class";
 

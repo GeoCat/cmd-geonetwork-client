@@ -111,6 +111,14 @@ public enum PropertiesLoader {
         return props.getProperty(PropertyFile.GN_IMPORT_REMOTE_XSLT);
     }
 
+    public String getGNExportLocalXslt() {
+        if(props == null) {
+            return "";
+        }
+        return props.getProperty(PropertyFile.GN_EXPORT_LOCAL_XSLT);
+    }
+
+
     public String getDefaultImportUser() {
         if(props == null) {
             return null;
@@ -123,6 +131,13 @@ public enum PropertiesLoader {
             return null;
         }
         return props.getProperty(PropertyFile.GN_DEFAULT_IMPORT_GROUP_KEY);
+    }
+
+    public String getDeleteDefaultImportGroupBeforeImport() {
+        if(props == null) {
+            return null;
+        }
+        return props.getProperty(PropertyFile.GN_DELETE_DEFAULT_IMPORT_GROUP_BEFORE_IMPORT, "false");
     }
 
     public String getDefaultImportStatus() {
@@ -179,11 +194,24 @@ public enum PropertiesLoader {
         }
     }
 
+    public String getDefaultExportGroupNames() {
+        if(props == null) {
+            return null;
+        }
+        return props.getProperty(PropertyFile.GN_EXPORT_GROUP_NAMES);
+    }
 
     public String getXpathFactoryClass() {
         if(props == null) {
             return null;
         }
         return props.getProperty(PropertyFile.XPATH_FACTORY_CLASS);
+    }
+
+    public String getDefaultCswEndpoint() {
+        if(props == null) {
+            return null;
+        }
+        return props.getProperty(PropertyFile.GN_DEFAULT_CSW_ENDPOINT_KEY);
     }
 }

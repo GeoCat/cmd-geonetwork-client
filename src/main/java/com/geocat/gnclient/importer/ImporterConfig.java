@@ -21,6 +21,8 @@ public class ImporterConfig {
     private String defaultImportPrivileges;
     private boolean deleteMetadataAndNonDefaultUsersAndGroups;
 
+    private boolean deleteDefaultImportGroupBeforeImport;
+
     public Path getOutputPath() {
         return outputPath;
     }
@@ -57,6 +59,10 @@ public class ImporterConfig {
         return deleteMetadataAndNonDefaultUsersAndGroups;
     }
 
+    public boolean isDeleteDefaultImportGroupBeforeImport() {
+        return deleteDefaultImportGroupBeforeImport;
+    }
+
     private ImporterConfig(Builder builder) {
         outputPath = builder.outputPath;
         defaultUsersPassword = builder.defaultUsersPassword;
@@ -67,6 +73,7 @@ public class ImporterConfig {
         defaultImportStatus = builder.defaultImportStatus;
         defaultImportPrivileges = builder.defaultImportPrivileges;
         deleteMetadataAndNonDefaultUsersAndGroups = builder.deleteMetadataAndNonDefaultUsersAndGroups;
+        deleteDefaultImportGroupBeforeImport = builder.deleteDefaultImportGroupBeforeImport;
     }
 
     public static class Builder {
@@ -79,6 +86,7 @@ public class ImporterConfig {
         private String defaultImportStatus = "";
         private String defaultImportPrivileges = "";
         private boolean deleteMetadataAndNonDefaultUsersAndGroups = false;
+        private boolean deleteDefaultImportGroupBeforeImport = false;
 
         public Builder(Path outputPath) {
             this.outputPath = outputPath;
@@ -106,6 +114,11 @@ public class ImporterConfig {
 
         public Builder defaultImportGroup(String defaultImportGroup) {
             this.defaultImportGroup = defaultImportGroup;
+            return this;
+        }
+
+        public Builder deleteDefaultImportGroupBeforeImport(boolean deleteDefaultImportGroupBeforeImport) {
+            this.deleteDefaultImportGroupBeforeImport = deleteDefaultImportGroupBeforeImport;
             return this;
         }
 

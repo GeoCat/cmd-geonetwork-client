@@ -85,6 +85,12 @@ public abstract class GNBaseServices  {
 
         try {
             response = closeableHttpClient.execute(httpDelete, clientContext);
+
+            // 404 response is valid if the element to delete is not found
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return responseBody;
+            }
+
             checkSuccessStatusCode(response);
 
             HttpEntity entity = response.getEntity();
@@ -93,7 +99,6 @@ public abstract class GNBaseServices  {
                 responseBody = EntityUtils.toString(entity, "UTF-8");
                 EntityUtils.consume(entity);
             }
-
         } finally {
             HttpClientUtils.closeQuietly(response);
         }

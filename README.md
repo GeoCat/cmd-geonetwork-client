@@ -37,6 +37,10 @@ For export mode the following properties can be configured (that are not require
 - `gn_export_metadata_modified_since` (optional): Filter to retrieve metadata modified since the date specified. Format: `VALUE:UNITS`. Examples: 5:MINUTES (5 minutes ago), 2:HOURS (2 hours ago). Units supported: `MINUTES`, `HOURS`, `DAYS`, `MONTHS`, `YEARS`.
 - `gn_export_filter_by_group_locally`: Flag to use when exporting from some old GeoNetwork instances as CSW filter by group doesn't work. Process all metadata retrieving for each one the group.
 - `gn_request_delay`: Delay in milliseconds for each request, to avoid causing connection issues with the server.
+- `gn_csw_endpoint`: CSW endpoint to use, defaults to /csw
+- `gn_export_group_names`: Comma separated list of groups to export.
+- `gn_export_local_xslt=`: Path to the local xslt to apply to exported metadata
+
 
 ## Properties for import mode
 
@@ -85,6 +89,15 @@ gn_export_filter_by_group_locally=false
 
 # Delay in ms to execute each request
 gn_request_delay=1000
+
+# CSW endpoint to use, defaults to /csw
+#gn_csw_endpoint=/csw-inspire
+
+# Comma separated list of groups to export
+#gn_export_group_names=test1
+
+# Path to the local xslt to apply to exported metadata
+#gn_export_local_xslt=./export.xsl
 ```
 
 ### Example of file for import
@@ -108,11 +121,13 @@ output_path=/tmp/output
 # Default password for new users in import process
 gn_users_default_password=dummypassword
 
-# Path of local xslt to apply to imported metadata
-#gn_import_xslt=./import.xsl
+# Path of local xslt to apply to imported metadata (use full path)
+#gn_import_xslt=/PATH/import.xsl
 gn_import_local_xslt=
 
-# Name of remote xslt (available in GeoNetwork) to apply to imported metadata
+# Name of remote xslt (available in GeoNetwork) to apply to imported metadata.
+# It should contain the file extension and the file should be available in 
+# Geonetwork in the following path: TOMCAT_DIR/webapps/geonetwork/xsl/conversion/import
 #gn_import_remote_xslt=convertV3.1To4.0.xsl
 gn_import_remote_xslt=
 

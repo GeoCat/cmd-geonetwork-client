@@ -3,6 +3,7 @@ package com.geocat.gnclient.importer;
 import com.geocat.gnclient.gnservices.GNServicesClient;
 import com.geocat.gnclient.gnservices.groups.model.Group;
 import com.geocat.gnclient.gnservices.metadata.model.MetadataPrivilege;
+import com.geocat.gnclient.util.HelperUtility;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -107,6 +108,10 @@ public class Importer {
             importerReport.setRemoveData(false);
         }
 
+        if (config.isDeleteDefaultImportGroupBeforeImport()) {
+            removeDefaultGroupMetadata(client, config);
+        }
+
         // Load groups / users from the Geonetwork instance to import the metadata
         remoteGroups = client.retrieveGroups();
         remoteUsers = client.retrieveUsers();
@@ -199,6 +204,33 @@ public class Importer {
         }
     }
 
+       private void removeDefaultGroupMetadata(GNServicesClient client, ImporterConfig config) throws Exception {
+
+        StringBuilder removeDataErrors = new StringBuilder();
+
+        remoteGroups = client.retrieveGroups();
+        Group defaultImportGroup = remoteGroups.get(config.getDefaultImportGroup());
+        Map<String, String> metadataForGroup = client.retrieveAllMetadataForGroup(defaultImportGroup.getId(), "");
+
+        metadataForGroup.forEach((uuid, md) -> {
+            try {
+                client.deleteMetadata(uuid);
+            } catch (Exception ex) {
+                logger.error("Error removing metadata '" + uuid + "' for default import group: " + defaultImportGroup.getName(), ex);
+                removeDataErrors.append("Error removing metadata '" + uuid + "' for default import group: " +  defaultImportGroup.getName() + ", " + ex.getMessage());
+                removeDataErrors.append("\n");
+            }
+        });
+
+        if (StringUtils.isNotEmpty(removeDataErrors.toString())) {
+            importerReport.setErrorsRemoveMetadataDefaultGroup(true);
+            importerReport.setErrorsRemoveMetadataDefaultGroupText(removeDataErrors.toString());
+            System.out.print("Removing default group metadata errors:" + removeDataErrors.toString());
+        } else {
+            importerReport.setErrorsRemoveMetadataDefaultGroup(false);
+        }
+    }
+
     private void importMetadata(GNServicesClient client, ImporterConfig config,
                                 Map<Integer, Integer> groupMapper,
                                 Map<Integer, Integer> userMapper) throws IOException {
@@ -261,19 +293,27 @@ public class Importer {
                         int ownerId = Integer.parseInt(metadataInfo.get("ownerId"));
                         int groupId = Integer.parseInt(metadataInfo.get("groupId"));
 
-                        int destGroupId;
-                        int destOwnerId;
+                        Integer destGroupId;
+                        Integer destOwnerId;
 
                         if (existsInfoFile) {
                             destGroupId = groupMapper.get(groupId);
                             destOwnerId = userMapper.get(ownerId);
+
+                            if (destGroupId == null) {
+                                destGroupId = groupId;
+                            }
+
+                            if (destOwnerId == null) {
+                                destOwnerId = ownerId;
+                            }
                         } else {
                             // No info file, the default ownerId and groupId correspond to the remote server, no need to apply any mapping
                             destGroupId = groupId;
                             destOwnerId = ownerId;
                         }
 
-                        String status = metadataInfo.get("status");
+                        String status = metadataInfo.get("status1");
                         String importXslName =  config.getImportRemoteXslt();
 
                         long mdId = -1;
@@ -281,7 +321,9 @@ public class Importer {
 
                         try {
                             // Applies xslt to xml if required
-                            xmlFile = applyXslt(xmlFile, config.getImportLocalXslt());
+                            xmlFile = HelperUtility.applyXslt(xmlFile, config.getImportLocalXslt());
+
+                            client.deleteAllMetadataStatus(uuid, mdId);
 
                             mdId = client.insertMetadata(xmlFile, uuid, destOwnerId, destGroupId, "true", "true",
                                 status, "n", "iso19139", importXslName);
@@ -307,14 +349,22 @@ public class Importer {
 
                         if (importStatus == 0) {
                             try {
+                                client.deleteAllMetadataStatus(uuid, mdId);
+
+                                int i = 1;
+                                status = metadataInfo.get("status" + i);
+                                while(StringUtils.isNotEmpty(status)) {
                                 MetadataStatus st = new MetadataStatus();
                                 st.setName(status);
-                                st.setChangeDate(metadataInfo.get("statusDate"));
-                                st.setChangeMessage(metadataInfo.get("statusMessage"));
-                                st.setUserId(metadataInfo.get("statusUser"));
+                                    st.setChangeDate(metadataInfo.get("statusDate" + i));
+                                    st.setChangeMessage(metadataInfo.get("statusMessage" + i));
+                                    st.setUserId(metadataInfo.get("statusUser" + i));
+                                    st.setUuid(metadataInfo.get("uuid"));
+                                    client.updateMetadataStatus(uuid, mdId, st);
 
-                                // Updates metadata status
-                                client.updateMetadataStatus(uuid, mdId, st);
+                                    status = metadataInfo.get("status" + ++i);
+                                }
+
                             } catch (Exception ex) {
                                 importStatus = 3;
                                 exImport = ex;
@@ -544,6 +594,29 @@ public class Importer {
             String ownerId = getXmlValue(responseDoc, "/info/owner", xpfac);
             metadataInfo.put("ownerId", ownerId);
 
+            List<Element> statuses = getElements(responseDoc, "/info/statuses", xpfac);
+            if (!statuses.isEmpty()) {
+                int i = 1;
+                int total = statuses.get(0).getChildren().size();
+
+                for(int j = total - 1; j >= 0; j--) {
+                    Element s = statuses.get(0).getChildren().get(j);
+
+                    String status = getXmlValue(s, "./name", xpfac);
+                    metadataInfo.put("status" + i, status);
+
+                    String statusMessage = getXmlValue(s, "./changeMessage", xpfac);
+                    metadataInfo.put("statusMessage" + i, statusMessage);
+
+                    String statusDate = getXmlValue(s, "./changeDate", xpfac);
+                    metadataInfo.put("statusDate" + i, statusDate);
+
+                    String statusUser = getXmlValue(s, "./userId", xpfac);
+                    metadataInfo.put("statusUser" + i, statusUser);
+
+                    i++;
+                }
+            } /*else {
             String status = getXmlValue(responseDoc, "/info/status/name", xpfac);
             metadataInfo.put("status", status);
 
@@ -555,6 +628,8 @@ public class Importer {
 
             String statusUser = getXmlValue(responseDoc, "/info/status/userId", xpfac);
             metadataInfo.put("statusUser", statusUser);
+            }*/
+
         } else {
             Group defaultImportGroup = remoteGroups.get(config.getDefaultImportGroup());
 
@@ -577,13 +652,13 @@ public class Importer {
             // Use default values
             metadataInfo.put("uuid", uuid);
             metadataInfo.put("ownerId",  defaultImportUserId + "");
-            metadataInfo.put("status", config.getDefaultImportStatus());
-            metadataInfo.put("statusMessage", config.getDefaultImportStatus());
+            metadataInfo.put("status1", config.getDefaultImportStatus());
+            metadataInfo.put("statusMessage1", config.getDefaultImportStatus());
             String currentDate = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mmX")
                 .withZone(ZoneOffset.UTC)
                 .format(Instant.now());
-            metadataInfo.put("statusDate", currentDate);
-            metadataInfo.put("statusUser", defaultImportUserId + "");
+            metadataInfo.put("statusDate1", currentDate);
+            metadataInfo.put("statusUser1", defaultImportUserId + "");
         }
 
 
@@ -741,42 +816,7 @@ public class Importer {
 
 
 
-    private String applyXslt(String xml, String importXslt) throws Exception {
-        // Apply xslt to metadata
-        if (StringUtils.isNotEmpty(importXslt) &&
-            Files.exists( Paths.get(importXslt))) {
 
-            //  read the XML to a JDOM2 document
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            DocumentBuilder dombuilder = factory.newDocumentBuilder();
-
-            InputSource inputSource = new InputSource( new StringReader( xml ) );
-
-            org.w3c.dom.Document w3cDocument = dombuilder.parse(inputSource);
-            DOMBuilder jdomBuilder = new DOMBuilder();
-            Document jdomDocument = jdomBuilder.build(w3cDocument);
-
-            // create the JDOMSource from JDOM2 document
-            JDOMSource source = new JDOMSource(jdomDocument);
-
-            // create the transformer
-            Transformer transformer = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null)
-                    .newTransformer(new StreamSource(importXslt));
-
-            // create the JDOMResult object
-            JDOMResult out = new JDOMResult();
-
-            // perform the transformation
-            transformer.transform(source, out);
-
-            XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-            return outputter.outputString(out.getDocument());
-
-        } else {
-            return xml;
-        }
-    }
 
     private Map<String, Group> processGroupsFileXml(Path filePath) throws Exception {
         Map<String, Group> groups = new HashMap<>();

@@ -64,13 +64,17 @@ public class MetadataInfo {
         rootEl.addContent(new Element("groupName").setText(getGroupName()));
         rootEl.addContent(new Element("owner").setText(privileges.getOwner()));
 
+        Element statusesEl = new Element("statuses");
+
         Element statusEl = new Element("status");
         statusEl.addContent(new Element("name").setText(status.getName()));
         statusEl.addContent(new Element("changeDate").setText(status.getChangeDate()));
         statusEl.addContent(new Element("changeMessage").setText(status.getChangeMessage()));
         statusEl.addContent(new Element("userId").setText(status.getUserId()));
 
-        rootEl.addContent(statusEl);
+        statusesEl.addContent(statusEl);
+
+        rootEl.addContent(statusesEl);
 
         Element privilegesEl = new Element("privileges");
 

@@ -122,6 +122,8 @@ public class Cli {
                     String gnImportLocalXslt = PropertiesLoader.INSTANCE.getGNImportLocalXslt();
                     String gnImportRemoteXslt = PropertiesLoader.INSTANCE.getGNImportRemoteXslt();
                     String outputPath = PropertiesLoader.INSTANCE.getOutputPath();
+                    String gnCswEndpoint = PropertiesLoader.INSTANCE.getDefaultCswEndpoint();
+
                     boolean doCustomAuthentication =
                         (PropertiesLoader.INSTANCE.doCustomAuthentication().equalsIgnoreCase("true"));
                     String customAuthenticationUrl = PropertiesLoader.INSTANCE.getAuthenticationUrl();
@@ -131,10 +133,11 @@ public class Cli {
 
                     System.out.println("GeoNetwork url: " + gnBaseUrl);
                     if (!doCustomAuthentication) {
-                        gnClient = new GNServicesClient.Builder(gnBaseUrl, Paths.get(outputPath)).build();
+                        gnClient = new GNServicesClient.Builder(gnBaseUrl, Paths.get(outputPath)).cswEndpoint(gnCswEndpoint).build();
                     } else {
                         gnClient = new GNServicesClient.Builder(gnBaseUrl, Paths.get(outputPath)).doCustomAuthentication(true)
-                            .customAuthenticationUrl(customAuthenticationUrl).build();
+                            .customAuthenticationUrl(customAuthenticationUrl)
+                            .cswEndpoint(gnCswEndpoint).build();
                     }
 
                     if (!doCustomAuthentication) {
@@ -198,7 +201,8 @@ public class Cli {
                         boolean gnDefaultExportFilterByGroupLocally =
                             PropertiesLoader.INSTANCE.getDefaultExportFilterByGroupLocally();
                         int gnDefaultRequestDelay = PropertiesLoader.INSTANCE.gnDefaultRequestDelay();
-
+                        String gnDefaultExportGroupNames = PropertiesLoader.INSTANCE.getDefaultExportGroupNames();
+                        String gnExportLocalXslt = PropertiesLoader.INSTANCE.getGNExportLocalXslt();
 
                         System.out.println("Export path: " + outputPath);
                         System.out.println(StringUtils.repeat("-", 20));
@@ -206,10 +210,12 @@ public class Cli {
                         ExporterConfig exporterConfig = new ExporterConfig.Builder(Paths.get(outputPath))
                             .defaultExportMetadataTypes(gnDefaultExportMetadataTypes)
                             .defaultCswConstraint(gnDefaultCswConstraint)
+                            .exportLocalXslt(gnExportLocalXslt)
                             .defaultExportFilterByGroupLocally(gnDefaultExportFilterByGroupLocally)
                             .defaultRequestDelay(gnDefaultRequestDelay)
                             .defaultExportType(exportType)
                             .defaultExportMetadataModifiedSince(metadataModifiedDateSinceFilter)
+                            .defaultExportGroupNames(gnDefaultExportGroupNames)
                             .build();
 
                         Exporter exporter = new Exporter();
@@ -236,10 +242,13 @@ public class Cli {
                         String gnDefaultImportStatus = PropertiesLoader.INSTANCE.getDefaultImportStatus();
                         String gnDefaultImportPrivileges = PropertiesLoader.INSTANCE.getDefaultImportPrivileges();
 
+                        String gnDeleteDefaultImportGroupBeforeImport = PropertiesLoader.INSTANCE.getDeleteDefaultImportGroupBeforeImport();
+
                         ImporterConfig importerConfig = new ImporterConfig.Builder(Paths.get(outputPath))
                             .defaultUsersPassword(gnDefaultUsersPassword).importLocalXslt(gnImportLocalXslt)
                             .importRemoteXslt(gnImportRemoteXslt).defaultImportUser(gnDefaultImportUser)
                             .defaultImportGroup(gnDefaultImportGroup).defaultImportStatus(gnDefaultImportStatus)
+                            .deleteDefaultImportGroupBeforeImport(Boolean.parseBoolean(gnDeleteDefaultImportGroupBeforeImport))
                             .defaultImportPrivileges(gnDefaultImportPrivileges)
                             .deleteMetadataAndNonDefaultUsersAndGroups(hasDeleteOption)
                             .build();
