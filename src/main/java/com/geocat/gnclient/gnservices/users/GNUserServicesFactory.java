@@ -5,7 +5,9 @@ import com.geocat.gnclient.constants.Geonetwork;
 public class GNUserServicesFactory {
 
     public static GNUserServices getUserServices(String gnVersion, String baseUrl) throws Exception {
-        if(gnVersion.startsWith(Geonetwork.VERSION_3_X)) {
+        if (gnVersion.startsWith(Geonetwork.VERSION_3_X) ||
+            gnVersion.startsWith(Geonetwork.VERSION_4_0_X) ||
+            gnVersion.startsWith(Geonetwork.VERSION_4_2_X)) {
            return new GNUserServices3X(baseUrl);
 
         } else if(gnVersion.startsWith(Geonetwork.VERSION_2_10_X)) {
