@@ -165,7 +165,7 @@
   <properties>
     <jdk.version>1.8</jdk.version>
 
-    <httpclient.version>4.4</httpclient.version>
+    <httpclient.version>4.5.13</httpclient.version>
     <httpmime.version>4.4</httpmime.version>
     <fluenthc.version>4.4</fluenthc.version>
     <commonscodec.version>1.10</commonscodec.version>
