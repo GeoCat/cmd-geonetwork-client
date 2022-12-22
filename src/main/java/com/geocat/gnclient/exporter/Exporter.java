@@ -419,7 +419,8 @@ public class Exporter {
                     Thread.sleep(config.getDefaultRequestDelay());
                 }
 
-                if (client.getVersion().startsWith(Geonetwork.VERSION_4_0_X)) {
+                if (client.getVersion().startsWith(Geonetwork.VERSION_4_0_X) ||
+                    client.getVersion().startsWith(Geonetwork.VERSION_4_2_X)) {
                     MetadataInfoV4 mdInfo = client.retrieveMetadataInfoV4(uuid, groups);
 
                     String groupOwner =  mdInfo.getPrivileges().getGroupOwner();
@@ -694,7 +695,8 @@ public class Exporter {
     private String buildCswFilter(GNServicesClient client, ExporterConfig config) {
         String filter = config.getDefaultCswConstraint();
 
-        if (client.getVersion().startsWith(Geonetwork.VERSION_4_0_X)) {
+        if (client.getVersion().startsWith(Geonetwork.VERSION_4_0_X) ||
+            client.getVersion().startsWith(Geonetwork.VERSION_4_2_X)) {
             if (StringUtils.isEmpty(filter)) {
                 filter = "isHarvested%3D'false'";
             } else {
